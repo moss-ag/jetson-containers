@@ -72,10 +72,10 @@ which cmake
 apt purge -y python3.9 libpython3.9* || echo "python3.9 not found, skipping removal"
 ls -ll /usr/bin/python*
     
-# create the ROS_ROOT directory
-mkdir -p ${ROS_ROOT}/src
-cd ${ROS_ROOT}
-    
+# create build directory in /tmp (isolated from final install location)
+mkdir -p /tmp/ros_build/src
+cd /tmp/ros_build
+
 # download ROS sources
 # https://answers.ros.org/question/325245/minimal-ros2-installation/?answer=325249#post-id-325249
 rosinstall_generator --deps --rosdistro ${ROS_DISTRO} ${ROS_PKG} \
@@ -102,8 +102,8 @@ cat ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
 vcs import src < ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
     
 # https://github.com/dusty-nv/jetson-containers/issues/181
-rm -r ${ROS_ROOT}/src/ament_cmake
-git -C ${ROS_ROOT}/src/ clone https://github.com/ament/ament_cmake -b ${ROS_DISTRO}
+rm -r /tmp/ros_build/src/ament_cmake
+git -C /tmp/ros_build/src/ clone https://github.com/ament/ament_cmake -b ${ROS_DISTRO}
 
 # skip installation of some conflicting packages
 SKIP_KEYS="libopencv-dev libopencv-contrib-dev libopencv-imgproc-dev python-opencv python3-opencv"
@@ -143,15 +143,15 @@ rosdep install -y \
 	--skip-keys "$SKIP_KEYS"
 
 # build it all - for verbose, see https://answers.ros.org/question/363112/how-to-see-compiler-invocation-in-colcon-build
+# Install directly to ${ROS_ROOT} (e.g., /opt/ros/humble) instead of /opt/ros/humble/install
 colcon build \
 	--merge-install \
-	--cmake-args -DCMAKE_BUILD_TYPE=Release 
-    
-# remove build files
-rm -rf ${ROS_ROOT}/src
-rm -rf ${ROS_ROOT}/logs
-rm -rf ${ROS_ROOT}/build
-rm ${ROS_ROOT}/*.rosinstall
+	--install-base ${ROS_ROOT} \
+	--cmake-args -DCMAKE_BUILD_TYPE=Release
+
+# remove entire build directory
+cd /
+rm -rf /tmp/ros_build
     
 # cleanup apt   
 rm -rf /var/lib/apt/lists/*
