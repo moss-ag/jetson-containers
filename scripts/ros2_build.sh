@@ -56,12 +56,14 @@ pip3 install --upgrade --no-cache-dir \
 		pytest
 
 # upgrade cmake - https://stackoverflow.com/a/56690743
-# this is needed to build some of the ROS2 packages	  
-# use pip to upgrade cmake instead because of kitware's rotating GPG keys:
-# https://github.com/dusty-nv/jetson-containers/issues/216			  
-python3 -m pip install --upgrade pip
-pip3 install --no-cache-dir scikit-build
-pip3 install --upgrade --no-cache-dir --verbose cmake
+# this is needed to build some of the ROS2 packages
+# Install CMake from official Kitware binary for ARM64 instead of broken pip version
+# Pin to 3.31.9 to avoid CMake 4.0+ compatibility issues with osrf_testing_tools_cpp
+# https://github.com/osrf/osrf_testing_tools_cpp/issues/91
+wget -q https://github.com/Kitware/CMake/releases/download/v3.31.9/cmake-3.31.9-linux-aarch64.sh
+chmod +x cmake-3.31.9-linux-aarch64.sh
+./cmake-3.31.9-linux-aarch64.sh --skip-license --prefix=/usr/local
+rm cmake-3.31.9-linux-aarch64.sh
 cmake --version
 which cmake
 
